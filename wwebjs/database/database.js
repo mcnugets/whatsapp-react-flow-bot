@@ -24,18 +24,7 @@ connection.connect((error) => {
             if (result.length > 0) {
                 console.log("Database exists!");
                 console.log("Changing configs and reconnecting...");
-                conifgs.database = target_name;
-                connection = mysql.createConnection(conifgs);
-                connection.connect((error) => {
-                    if (error) {
-                        console.error('Failed database reconnection: ', error);
-                    }
-                    else {
-                        console.log("Database reconnected to-> ", target_name);
-                    }
-
-
-                })
+                connect_toDB();
 
             } else {
 
@@ -68,7 +57,7 @@ function connect_toDB() {
     connection = mysql.createConnection(conifgs);
     connection.connect((error) => {
         if (error) {
-            console.error('Database reconnection: ', error);
+            console.error('Failed Database reconnection: ', error);
         }
         else {
             console.log("Database reconnected to-> ", target_name);
