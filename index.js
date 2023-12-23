@@ -4,21 +4,51 @@ const apiroute = require('./routes/api');
 const fs = require('fs');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const cors = require('cors');
 const client = new Client({
     authStrategy: new LocalAuth()
 });
-const file = 'database/database.json';
+
 
 const app = express();
 const port = 3000;
 app.use(express.json());
-
+app.use(cors());
 app.use('/api', apiroute);
 
 app.listen(port, () => {
     console.log(`Server started on port::${port}`);
 })
 
+app.get('/phone_number:phone', async (req, res) => {
+    try {
+        // making post request
+        await axios.post('http://localhost:3000/api/phone_number',
+            req.params,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'SESSION_TOKEN'
+                },
+
+            })
+            .then(response => {
+                console.log('HTTP Request Response:', response.data);
+                console.log('HTTP Request Status:', response.status);
+            })
+            .catch(error => {
+                console.error('HTTP Request Error:', error.message);
+            });
+
+        res.status(200).json({ response: req.body });
+
+    } catch (err) {
+        console.error('Request was rejected', err.message);
+        res.status(500).json({ error: 'Request rejection' });
+    }
+
+
+})
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
@@ -69,8 +99,18 @@ client.on('message', async (message) => {
                 const phone_number = "+" + message.from.substring(0, 12);
                 console.log(phone_number);
                 const [time, date] = await unix_time(message.timestamp);
-                await client.sendMessage("447412303606@c.us", `Такой-то человек ${name} с номером: ${phone_number}` +
-                    'оставил заявку на получение консультации ' + contact_type + '. ' + `${time} ` + `${date}`);
+
+                const response = await axios.get('http://localhost:3000/api/recipient');
+
+
+                response.data.forEach(async (obj) => {
+                    const msg_recipient = obj.phone_number.substring(2) + '@c.us';
+                    console.log(msg_recipient);
+                    await client.sendMessage(msg_recipient, `Такой-то человек ${name} с номером: ${phone_number}` +
+                        'оставил заявку на получение консультации ' + contact_type + '. ' + `${time} ` + `${date}`);
+
+                })
+
 
 
                 let action = (message.body === "/напишитемне") ? "/напишитемне" : "/позвонитемне";
@@ -108,7 +148,6 @@ client.on('message', async (message) => {
 
 
 
-    // const json_data = fs.writeFileSync('')
 
 });
 
@@ -125,30 +164,6 @@ async function unix_time(timestatmp) {
     return [time, day + '/' + month + '/' + year];
 }
 
-// async function write_data(contact_info) {
-//     try {
-//         if (fs.existsSync(file)) {
-//             const get_data = fs.readFileSync('database/database.json', 'utf8');
-//             const json_content = JSON.parse(get_data);
-
-
-//             json_content.push(contact_info);
-//             const new_json = JSON.stringify(json_content, null, 2);
-//             fs.writeFileSync(file, new_json);
-
-//             console.log("Data pushed without a problem");
-//         }
-//         else {
-//             const first_json = JSON.stringify([contact_info], null, 2);
-//             fs.writeFileSync(file, first_json);
-
-//             console.log("File created and data addded successfully!");
-//         }
-//     } catch (err) {
-//         console.error("Failed: ", err);
-//     }
-
-// }
 
 
 client.initialize();
