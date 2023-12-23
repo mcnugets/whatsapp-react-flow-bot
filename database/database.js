@@ -31,7 +31,7 @@ connection.connect((error) => {
                         console.error('Failed database reconnection: ', error);
                     }
                     else {
-                        connect_toDB();
+                        console.log("Database reconnected to-> ", target_name);
                     }
 
 
